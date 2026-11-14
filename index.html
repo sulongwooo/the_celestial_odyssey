@@ -1,0 +1,1343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>THE SOLAR MONOGRAPH // 太阳系引力观测录</title>
+    <!-- 引入杂志风专属字体：古典罗马衬线 + 现代几何等宽/无衬线 + 正统明朝宋体 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,400&family=Noto+Serif+SC:wght@300;400;600&family=Space+Grotesk:wght@300;400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --font-en-serif: 'Cormorant Garamond', Garamond, Georgia, serif;
+            --font-en-display: 'Cinzel', Georgia, serif;
+            --font-en-sans: 'Space Grotesk', -apple-system, sans-serif;
+            
+            --font-zh-serif: 'Noto Serif SC', 'Source Han Serif CN', 'Songti SC', SimSun, serif;
+            --font-zh-sans: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            
+            --color-cream: #f7f6f2;
+            --color-muted: rgba(247, 246, 242, 0.58);
+            --color-dim: rgba(247, 246, 242, 0.32);
+            --color-hairline: rgba(255, 255, 255, 0.14);
+            --color-accent: #cfa860; /* 典雅星辉微金 */
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #010206;
+            color: var(--color-cream);
+        }
+
+        /* 英文杂志版式规范 */
+        body.lang-en { font-family: var(--font-en-sans); }
+        body.lang-en .font-heading { font-family: var(--font-en-display); letter-spacing: 0.12em; }
+        body.lang-en .font-serif { font-family: var(--font-en-serif); }
+
+        /* 中文典雅印刷排版规范 */
+        body.lang-zh { font-family: var(--font-zh-sans); }
+        body.lang-zh .font-heading { font-family: var(--font-zh-serif); letter-spacing: 0.08em; font-weight: 600; }
+        body.lang-zh .font-serif { font-family: var(--font-zh-serif); }
+        body.lang-zh .editorial-body {
+            font-size: 13.5px !important;
+            line-height: 2.1 !important;
+            letter-spacing: 0.04em !important;
+        }
+
+        #webgl-canvas {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 1;
+            user-select: none;
+        }
+
+        #ui-layer {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            pointer-events: none;
+            padding: 48px 64px;
+        }
+
+        .interactive { pointer-events: auto; }
+
+        /* ================= 1. 杂志巨幅报头 (仅在总览呈现，特写隐退) ================= */
+        .masthead {
+            position: absolute;
+            top: 48px;
+            left: 64px;
+            max-width: 440px;
+            z-index: 20;
+            pointer-events: none;
+            text-shadow: 0 4px 24px rgba(0, 0, 0, 0.9);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+
+        body.in-focus .masthead {
+            opacity: 0;
+            transform: translateY(-16px);
+            pointer-events: none;
+        }
+
+        .issue-meta {
+            font-size: 8.5px;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--color-accent);
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .issue-meta::before {
+            content: '';
+            width: 20px;
+            height: 1px;
+            background: var(--color-accent);
+        }
+
+        .magazine-logo {
+            font-size: clamp(32px, 3.8vw, 50px);
+            line-height: 0.95;
+            color: #ffffff;
+            font-weight: 500;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            letter-spacing: 0.08em;
+        }
+
+        .magazine-edition {
+            font-size: 13px;
+            font-style: italic;
+            color: var(--color-muted);
+            margin-bottom: 16px;
+            line-height: 1.4;
+        }
+
+        .editorial-lead {
+            font-size: 11px;
+            line-height: 1.8;
+            color: var(--color-dim);
+            border-left: 1px solid var(--color-hairline);
+            padding-left: 14px;
+            max-width: 330px;
+        }
+
+        /* ================= 2. 右上角：极简控制与毛玻璃边框设置项 ================= */
+        .top-right-nav {
+            position: absolute;
+            top: 48px;
+            right: 64px;
+            display: flex;
+            align-items: center;
+            gap: 28px;
+            z-index: 30;
+        }
+
+        .minimal-action {
+            background: transparent;
+            border: none;
+            color: var(--color-muted);
+            font-size: 10px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 4px 0;
+            position: relative;
+            transition: color 0.25s ease;
+        }
+
+        .minimal-action:hover { color: #ffffff; }
+
+        .minimal-action::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 0;
+            height: 1px;
+            background: var(--color-cream);
+            transition: width 0.25s ease;
+        }
+
+        .minimal-action:hover::after { width: 100%; }
+
+        /* 简约微光边框与毛玻璃设置项面板 */
+        .settings-popover {
+            position: absolute;
+            top: 86px;
+            right: 64px;
+            width: 250px;
+            background: rgba(6, 10, 20, 0.72);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 4px;
+            padding: 22px;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+            display: none;
+            opacity: 0;
+            transform: translateY(-8px);
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            z-index: 30;
+        }
+
+        .settings-popover.active {
+            display: block;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .pop-title {
+            font-size: 8.5px;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--color-accent);
+            margin-bottom: 14px;
+            border-bottom: 1px solid var(--color-hairline);
+            padding-bottom: 4px;
+        }
+
+        .pop-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 11px;
+            color: var(--color-muted);
+            margin-bottom: 10px;
+        }
+
+        .pop-checkbox {
+            appearance: none;
+            width: 13px;
+            height: 13px;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            background: transparent;
+            cursor: pointer;
+            position: relative;
+            outline: none;
+            border-radius: 2px;
+            transition: all 0.2s;
+        }
+
+        .pop-checkbox:checked { border-color: #fff; background: #fff; }
+        .pop-checkbox:checked::after {
+            content: '';
+            position: absolute;
+            width: 5px;
+            height: 5px;
+            top: 3px;
+            left: 3px;
+            background: #010206;
+        }
+
+        .pop-slider {
+            width: 100%;
+            appearance: none;
+            height: 1px;
+            background: rgba(255, 255, 255, 0.25);
+            outline: none;
+            margin: 8px 0 2px 0;
+        }
+
+        .pop-slider::-webkit-slider-thumb {
+            appearance: none;
+            width: 7px;
+            height: 7px;
+            background: #fff;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* ================= 3. 右侧：开放式星体杂志专栏 (黄金垂直居中) ================= */
+        .editorial-feature {
+            position: absolute;
+            top: 50%;
+            right: 64px;
+            width: clamp(360px, 32vw, 480px);
+            max-height: 85vh;
+            overflow-y: auto;
+            scrollbar-width: none;
+            z-index: 20;
+            opacity: 0;
+            transform: translateY(-50%) translateX(40px);
+            pointer-events: none;
+            transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            text-shadow: 0 2px 20px rgba(0, 0, 0, 0.95);
+        }
+        .editorial-feature::-webkit-scrollbar { display: none; }
+
+        .editorial-feature.active {
+            opacity: 1;
+            transform: translateY(-50%) translateX(0);
+            pointer-events: auto;
+        }
+
+        .feature-meta {
+            font-size: 8.5px;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            color: var(--color-accent);
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .feature-name {
+            font-size: clamp(42px, 5vw, 68px);
+            line-height: 0.92;
+            color: #ffffff;
+            font-weight: 400;
+            margin-bottom: 6px;
+            text-transform: uppercase;
+        }
+
+        .feature-sub {
+            font-size: 13px;
+            font-style: italic;
+            color: var(--color-muted);
+            margin-bottom: 24px;
+        }
+
+        .feature-divider {
+            width: 100%;
+            height: 1px;
+            background: var(--color-hairline);
+            margin-bottom: 24px;
+        }
+
+        .specs-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 22px 18px;
+            margin-bottom: 28px;
+        }
+
+        .spec-unit { display: flex; flex-direction: column; }
+
+        .spec-label {
+            font-size: 8.5px;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--color-dim);
+            margin-bottom: 4px;
+        }
+
+        .spec-value {
+            font-size: 24px;
+            color: #ffffff;
+            line-height: 1;
+            font-weight: 400;
+        }
+
+        .spec-value small {
+            font-size: 9px;
+            letter-spacing: 0.12em;
+            color: var(--color-muted);
+            margin-left: 4px;
+            font-family: var(--font-en-sans);
+        }
+
+        .editorial-body {
+            font-size: 13px;
+            line-height: 2.05;
+            color: rgba(247, 246, 242, 0.88);
+            text-align: justify;
+            margin-bottom: 34px;
+            font-weight: 300;
+        }
+
+        .editorial-body::first-letter {
+            font-size: 46px;
+            float: left;
+            line-height: 0.82;
+            margin-right: 12px;
+            padding: 2px;
+            color: var(--color-accent);
+            font-family: var(--font-en-serif);
+        }
+
+        .dismiss-action {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: transparent;
+            border: none;
+            color: var(--color-muted);
+            font-size: 9.5px;
+            letter-spacing: 0.28em;
+            text-transform: uppercase;
+            cursor: pointer;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--color-hairline);
+            transition: all 0.25s ease;
+        }
+
+        .dismiss-action:hover {
+            color: #ffffff;
+            border-bottom-color: #ffffff;
+        }
+
+        /* ================= 4. 底部：典藏级装帧出版标尺 (FOLIO & COLOPHON) ================= */
+        .editorial-folio {
+            position: absolute;
+            bottom: 36px;
+            left: 64px;
+            right: 64px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 8.5px;
+            letter-spacing: 0.22em;
+            text-transform: uppercase;
+            color: var(--color-dim);
+            border-top: 1px solid var(--color-hairline);
+            padding-top: 12px;
+            z-index: 15;
+            pointer-events: none;
+            transition: opacity 0.5s ease;
+        }
+
+        .folio-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .folio-sep {
+            opacity: 0.4;
+        }
+
+        body.in-focus .editorial-folio {
+            opacity: 0.55;
+        }
+
+        @media (max-width: 900px) {
+            #ui-layer { padding: 24px; }
+            .masthead { top: 24px; left: 24px; max-width: 260px; }
+            .top-right-nav { top: 24px; right: 24px; }
+            .editorial-feature {
+                right: 24px; left: 24px; width: auto;
+                top: auto; bottom: 60px;
+                transform: translateY(20px);
+            }
+            .editorial-feature.active { transform: translateY(0); }
+            .editorial-folio { left: 24px; right: 24px; bottom: 18px; flex-direction: column; align-items: flex-start; gap: 6px; }
+        }
+    </style>
+    <script src="assets/lib/three.min.js"></script>
+    <script src="assets/lib/OrbitControls.js"></script>
+</head>
+<body class="lang-en">
+
+    <div id="webgl-canvas"></div>
+
+    <div id="ui-layer">
+        <!-- 杂志报头 (真实严谨的天文观测基准) -->
+        <header class="masthead">
+            <div class="issue-meta" id="i18n-meta">STANDARD EPOCH J2000.0 // SOLAR CARTOGRAPHY</div>
+            <h1 class="magazine-logo font-heading" id="i18n-title">THE CELESTIAL ODYSSEY</h1>
+            <div class="magazine-edition font-serif" id="i18n-sub">Solar Gravitational Architecture &bull; A Visual Monograph</div>
+            <p class="editorial-lead font-serif" id="i18n-lead">
+                "Planetary bodies trace elliptical geometries around their central star, sustaining clockwork order through universal gravitation."
+            </p>
+        </header>
+
+        <!-- 右上角极简交互动作 -->
+        <div class="top-right-nav interactive">
+            <button class="minimal-action" onclick="toggleLanguage()" id="i18n-lang-btn">EN / 中 (T)</button>
+            <button class="minimal-action" onclick="toggleSettings(event)" id="i18n-inst-btn">INSTRUMENTS</button>
+        </div>
+
+        <!-- 观测调校毛玻璃边框抽屉 -->
+        <div id="settings-panel" class="settings-popover interactive">
+            <div class="pop-title" id="i18n-opt-title">OPTICAL & CELESTIAL LAYERS</div>
+            <div class="pop-row">
+                <span id="i18n-opt-sky">Sky-Sphere Background</span>
+                <input type="checkbox" id="toggle-sky" class="pop-checkbox" checked>
+            </div>
+            <div class="pop-row">
+                <span id="i18n-opt-tracks">Orbital Trajectories</span>
+                <input type="checkbox" id="toggle-tracks" class="pop-checkbox" checked>
+            </div>
+
+            <div class="pop-title" style="margin-top: 14px;" id="i18n-dyn-title">TEMPORAL DYNAMICS</div>
+            <div class="pop-row">
+                <span id="i18n-dyn-rev">Orbital Revolution</span>
+                <input type="checkbox" id="toggle-orbit" class="pop-checkbox" checked>
+            </div>
+            <div class="pop-row">
+                <span id="i18n-dyn-rot">Axial Rotation</span>
+                <input type="checkbox" id="toggle-spin" class="pop-checkbox" checked>
+            </div>
+            <div style="margin-top: 8px;">
+                <div class="pop-row" style="margin-bottom: 0;">
+                    <span style="font-size: 8px; letter-spacing: 0.2em;" id="i18n-dyn-scale">TIME SCALE</span>
+                    <span id="speed-label" style="font-family: var(--font-en-serif); font-size: 13px;">1.0x</span>
+                </div>
+                <input type="range" id="time-scale" class="pop-slider" min="0" max="3" step="0.1" value="1.0">
+            </div>
+        </div>
+
+        <!-- 右侧：开放式星体特写杂志专栏 -->
+        <aside id="editorial-feature" class="editorial-feature">
+            <div class="feature-meta">
+                <span id="feature-index">CATALOG // N&deg; 03</span>
+                <span id="feature-type">TERRESTRIAL PLANET</span>
+            </div>
+            
+            <h2 id="feature-name" class="feature-name font-heading">EARTH</h2>
+            <div id="feature-sub" class="feature-sub font-serif">Tellus &bull; The Living Sanctuary</div>
+            
+            <div class="feature-divider"></div>
+
+            <div class="specs-grid">
+                <div class="spec-unit">
+                    <span class="spec-label" id="i18n-spec-dist">SEMIMAJOR AXIS</span>
+                    <div id="spec-dist" class="spec-value font-serif">1.00 <small>AU</small></div>
+                </div>
+                <div class="spec-unit">
+                    <span class="spec-label" id="i18n-spec-temp">SURFACE TEMP</span>
+                    <div id="spec-temp" class="spec-value font-serif">15 <small>&deg;C</small></div>
+                </div>
+                <div class="spec-unit">
+                    <span class="spec-label" id="i18n-spec-orbit">ORBITAL PERIOD</span>
+                    <div id="spec-orbit" class="spec-value font-serif">365.2 <small>DAYS</small></div>
+                </div>
+                <div class="spec-unit">
+                    <span class="spec-label" id="i18n-spec-rot">ROTATION PERIOD</span>
+                    <div id="spec-rot" class="spec-value font-serif">23.9 <small>HOURS</small></div>
+                </div>
+            </div>
+
+            <p id="feature-body" class="editorial-body font-serif">
+                The solitary cradle of biology in the known cosmos. Liquid oceans blanket over seventy percent of its surface.
+            </p>
+
+            <button class="dismiss-action" onclick="resetGlobalView()" id="i18n-dismiss">
+                &larr; &nbsp; RETURN TO DEEP SKY
+            </button>
+        </aside>
+
+        <!-- 底部权威装帧标尺：明确标注设计者与天体数据/影像真实源头 -->
+        <footer class="editorial-folio">
+            <div class="folio-left">
+                <span id="i18n-folio-design">DESIGN BY SULONGWOO</span>
+                <span class="folio-sep">&bull;</span>
+                <span id="i18n-folio-sources">EPHEMERIS & TEXTURES: NASA / JPL / SOLAR SYSTEM SCOPE</span>
+            </div>
+            <div class="folio-right" id="i18n-folio-right">
+                CATALOG // OVERVIEW [ 00 / 14 ]
+            </div>
+        </footer>
+    </div>
+
+    <script>
+        // --- 1. 双语典藏词典 (信息真实有据、杜绝假文本) ---
+        let currentLang = 'en';
+
+        const I18N = {
+            en: {
+                langBtn: 'EN / 中 (T)',
+                instBtn: 'INSTRUMENTS',
+                meta: 'STANDARD EPOCH J2000.0 // SOLAR CARTOGRAPHY',
+                title: 'THE CELESTIAL ODYSSEY',
+                sub: 'Solar Gravitational Architecture • A Visual Monograph',
+                lead: '"Planetary bodies trace elliptical geometries around their central star, sustaining clockwork order through universal gravitation."',
+                optTitle: 'OPTICAL & CELESTIAL LAYERS',
+                optSky: 'Sky-Sphere Background',
+                optTracks: 'Orbital Trajectories',
+                dynTitle: 'TEMPORAL DYNAMICS',
+                dynRev: 'Orbital Revolution',
+                dynRot: 'Axial Rotation',
+                dynScale: 'TIME SCALE',
+                specDist: 'SEMIMAJOR AXIS',
+                specTemp: 'SURFACE TEMP',
+                specOrbit: 'ORBITAL PERIOD',
+                specRot: 'ROTATION PERIOD',
+                dismiss: '←  RETURN TO DEEP SKY',
+                folioDesign: 'DESIGN BY SULONGWOO',
+                folioSources: 'EPHEMERIS & TEXTURES: NASA / JPL / SOLAR SYSTEM SCOPE',
+                folioRightOverview: 'CATALOG // OVERVIEW [ 00 / 15 ]',
+                folioRightPlate: 'CATALOG // SPECIMEN',
+                catalogPrefix: 'CATALOG // N°'
+            },
+            zh: {
+                langBtn: '中 / EN (T)',
+                instBtn: '观测调校仪',
+                meta: '天文标准历元 J2000.0 // 太阳系引力图谱',
+                title: '星穹奥德赛',
+                sub: '太阳系天体引力构架与运转年鉴 · 视觉画册',
+                lead: '“天体沿椭圆轨道围绕中心恒星运转，在万有引力的永恒沉静中维系精密而严谨的宇宙秩序。”',
+                optTitle: '光学与天体视层',
+                optSky: '全景天球背景星空',
+                optTracks: '公转运动轨道线',
+                dynTitle: '时间与动力学系统',
+                dynRev: '行星公转运动',
+                dynRot: '天体自转运动',
+                dynScale: '时间流速倍率',
+                specDist: '轨道半长轴',
+                specTemp: '表面平均温度',
+                specOrbit: '天体公转周期',
+                specRot: '天体自转周期',
+                dismiss: '←  恢复太阳系全景纵览',
+                folioDesign: '版面设计：SULONGWOO',
+                folioSources: '天体测算与纹理源：NASA / JPL / SOLAR SYSTEM SCOPE',
+                folioRightOverview: '星表索引 // 全系概览 [ 00 / 15 ]',
+                folioRightPlate: '星表索引 // 专栏图版',
+                catalogPrefix: '星表索引 // 序'
+            }
+        };
+
+        const celestialData = {
+            sun: {
+                id: '00', size: 7.2, distVal: 0, speed: 0, rotSpeed: 0.002, glow: '#ffa726',
+                en: {
+                    name: 'SUN', sub: 'Sol // Stellar Core', type: 'YELLOW DWARF STAR',
+                    dist: '0.00', distUnit: 'AU', temp: '5,500', orbit: '—', rot: '25.4 d',
+                    desc: 'The gravitational anchor of the solar system, containing 99.86% of its known mass. Deep within its convective interior, uninterrupted hydrogen fusion illuminates billions of kilometers of deep void, maintaining the delicate orbital geometry of all bound planetary wanderers.'
+                },
+                zh: {
+                    name: '太阳', sub: '恒星核心 · G型主序星', type: '恒星（黄矮星）',
+                    dist: '0.00', distUnit: '天文单位', temp: '5,500', orbit: '—', rot: '25.4 天',
+                    desc: '太阳系的引力中枢与中心心脏，凝聚了全系逾 99.86% 的全部质量。其核心持续进行着磅礴的氢氦核聚变，向外辐射出跨越数十亿公里的光辉与热能，以无形的引力织网维系着整个星系运转的节律。'
+                }
+            },
+            mercury: {
+                id: '01', size: 1.0, distVal: 16, speed: 0.035, rotSpeed: 0.008, glow: '#b0bec5',
+                en: {
+                    name: 'MERCURY', sub: 'Hermes // Scorched Silicate Crust', type: 'TERRESTRIAL PLANET',
+                    dist: '0.39', distUnit: 'AU', temp: '167', orbit: '88.0 d', rot: '58.6 d',
+                    desc: 'The innermost planet. Stripped of significant atmospheric insulation, this heavily cratered world confronts fierce solar radiation, enduring the most stark diurnal temperature swings in planetary space.'
+                },
+                zh: {
+                    name: '水星', sub: '第一轨道岩石行星', type: '类地行星',
+                    dist: '0.39', distUnit: '天文单位', temp: '167', orbit: '88.0 天', rot: '58.6 天',
+                    desc: '距离太阳最近的岩石信使。由于缺乏稠密的大气屏蔽，这颗布满撞击坑的古老岩石天体在严酷的真空中直面烈日强光，形成了全太阳系行星中极度悬殊的昼夜温差。'
+                }
+            },
+            venus: {
+                id: '02', size: 1.5, distVal: 24, speed: 0.025, rotSpeed: 0.004, glow: '#ffe082',
+                en: {
+                    name: 'VENUS', sub: 'Lucifer // Runaway Supercritical Atmosphere', type: 'TERRESTRIAL PLANET',
+                    dist: '0.72', distUnit: 'AU', temp: '465', orbit: '224.7 d', rot: '-243 d',
+                    desc: 'Shrouded in opaque sulfuric cloud banks and dense supercritical carbon dioxide, Venus suffers runaway thermal retention high enough to liquify lead, lazily revolving retrogradely clockwise.'
+                },
+                zh: {
+                    name: '金星', sub: '第二轨道逆行行星', type: '类地行星',
+                    dist: '0.72', distUnit: '天文单位', temp: '465', orbit: '224.7 天', rot: '243 天 (逆向)',
+                    desc: '夜空中最为璀璨的晨昏之星，却深藏于失控温室效应构筑的高热炼狱之中。极稠密的二氧化碳大气与浓硫酸云层将其包裹，且以罕见的自东向西方向逆向自转。'
+                }
+            },
+            earth: {
+                id: '03', size: 1.7, distVal: 35, speed: 0.018, rotSpeed: 0.018, glow: '#80d8ff',
+                en: {
+                    name: 'EARTH', sub: 'Tellus // The Pale Blue Dot', type: 'TERRESTRIAL PLANET',
+                    dist: '1.00', distUnit: 'AU', temp: '15', orbit: '365.2 d', rot: '23.9 h',
+                    desc: 'The singular known oasis of conscious life. Fluid saline oceans blanket over seventy percent of its crust, protected under a dynamic nitrogen-oxygen canopy and a resilient geomagnetic bubble.'
+                },
+                zh: {
+                    name: '地球', sub: '生命方舟与蓝色星球', type: '类地行星',
+                    dist: '1.00', distUnit: '天文单位', temp: '15', orbit: '365.2 天', rot: '23.9 小时',
+                    desc: '人类已知宇宙中唯一孕育生命的蔚蓝家园。波澜壮阔的液态海洋覆盖了逾七成的地表面积，含氧大气层与磁场护盾共同庇护着繁衍不息的亿万生物。'
+                }
+            },
+            moon: {
+                id: '03-A', size: 0.45, distVal: 3.5, speed: 0.05, rotSpeed: 0.015, glow: '#cfd8dc', isSatellite: true,
+                en: {
+                    name: 'MOON', sub: 'Luna // Earth Satellite', type: 'NATURAL SATELLITE',
+                    dist: '0.0026', distUnit: 'AU', temp: '-20', orbit: '27.3 d', rot: '27.3 d',
+                    desc: "Earth's ancient tidally locked sentinel. Quietly modulating terrestrial oceanic tides and axial stability, its desolate regolith was the first extra-terrestrial realm stepped upon by human exploration."
+                },
+                zh: {
+                    name: '月球', sub: '地球天然伴星', type: '天然卫星',
+                    dist: '0.0026', distUnit: '天文单位', temp: '-20', orbit: '27.3 天', rot: '27.3 天',
+                    desc: '地球亘古不变的银白伴侣。受到地球引力牢固的潮汐锁定，它始终以同一面凝视着人类文明。月球的起伏牵引着海洋的潮汐，亦是人类足迹踏上的首个地外世界。'
+                }
+            },
+            mars: {
+                id: '04', size: 1.2, distVal: 48, speed: 0.014, rotSpeed: 0.016, glow: '#ff8a65',
+                en: {
+                    name: 'MARS', sub: 'Ares // Ferric Oxide Desert', type: 'TERRESTRIAL PLANET',
+                    dist: '1.52', distUnit: 'AU', temp: '-63', orbit: '687.0 d', rot: '24.6 h',
+                    desc: 'A cold, rust-hued desert mantle sculpted by volcanic titan Olympus Mons and the abyssal fissures of Valles Marineris. It stands as the foremost threshold for interplanetary humanity.'
+                },
+                zh: {
+                    name: '火星', sub: '红色赤壁沙漠', type: '类地行星',
+                    dist: '1.52', distUnit: '天文单位', temp: '-63', orbit: '687.0 天', rot: '24.6 小时',
+                    desc: '浸染着氧化铁矿物色泽的赤色荒原。这里伫立着巍峨的奥林匹斯巨型死火山，亦刻蚀着浩瀚深邃的水手峡谷，凝结着人类向深空拓展的未来梦想。'
+                }
+            },
+            ceres: {
+                id: '05', size: 0.65, distVal: 59, speed: 0.011, rotSpeed: 0.02, glow: '#a1887f',
+                en: {
+                    name: 'CERES', sub: 'Asteroid Belt Monolith', type: 'DWARF PLANET',
+                    dist: '2.77', distUnit: 'AU', temp: '-105', orbit: '4.60 y', rot: '9.1 h',
+                    desc: 'The reigning sovereign of the main asteroid belt, harboring pristine underground reservoirs of water-ice and bright sodium carbonate faculae within the shadows of Occator crater.'
+                },
+                zh: {
+                    name: '谷神星', sub: '小行星带核心天体', type: '矮行星',
+                    dist: '2.77', distUnit: '天文单位', temp: '-105', orbit: '4.60 年', rot: '9.1 小时',
+                    desc: '静默悬浮于主小行星带的独行者。作为小行星带中唯一的矮行星，其表面深藏着丰富的水冰与神秘闪耀的碳酸盐明亮斑块。'
+                }
+            },
+            jupiter: {
+                id: '06', size: 4.2, distVal: 76, speed: 0.008, rotSpeed: 0.035, glow: '#ffcc80',
+                en: {
+                    name: 'JUPITER', sub: 'Jove // Planetary Colossus', type: 'GAS GIANT',
+                    dist: '5.20', distUnit: 'AU', temp: '-110', orbit: '11.86 y', rot: '9.9 h',
+                    desc: 'The monumental monarch of planets, outweighing all other planetary bodies combined. Belted in cascading storm shear, its centuries-old Great Red Spot anticyclone churns majestically.'
+                },
+                zh: {
+                    name: '木星', sub: '气态巨星之王', type: '气态巨行星',
+                    dist: '5.20', distUnit: '天文单位', temp: '-110', orbit: '11.86 年', rot: '9.9 小时',
+                    desc: '雄踞深空的巨行星霸主。气势磅礴的条纹气流云系下奔涌着高压流体，而那枚肆虐了数百年的超级反气旋“大红斑”，如同一只审视宇宙的深邃之眼。'
+                }
+            },
+            saturn: {
+                id: '07', size: 3.4, distVal: 98, speed: 0.0055, rotSpeed: 0.03, glow: '#ffe082', isSaturn: true,
+                en: {
+                    name: 'SATURN', sub: 'Chronos // Ring System', type: 'GAS GIANT',
+                    dist: '9.58', distUnit: 'AU', temp: '-140', orbit: '29.45 y', rot: '10.7 h',
+                    desc: 'World-renowned for its translucent halo of billion-fold water-ice shards. Its bulk density is the lowest in the solar system, lighter than liquid water itself.'
+                },
+                zh: {
+                    name: '土星', sub: '璀璨星环之界', type: '气态巨行星',
+                    dist: '9.58', distUnit: '天文单位', temp: '-140', orbit: '29.45 年', rot: '10.7 小时',
+                    desc: '以令人惊叹的 3D 星环闻名于世的天工之作。璀璨的光环由无数细微如尘的水冰颗粒构成；土星平均密度极小，甚至能轻盈漂浮于浩瀚水面之上。'
+                }
+            },
+            uranus: {
+                id: '08', size: 2.3, distVal: 118, speed: 0.004, rotSpeed: 0.02, glow: '#80deea',
+                en: {
+                    name: 'URANUS', sub: 'Caelus // High Obliquity Ice World', type: 'ICE GIANT',
+                    dist: '19.2', distUnit: 'AU', temp: '-195', orbit: '84.0 y', rot: '17.2 h',
+                    desc: 'An ice giant rolling sideways across space with an extreme 97.8° obliquity. Atmospheric methane absorbs longer red wavelengths, painting its frozen cloud tops in silent cyan.'
+                },
+                zh: {
+                    name: '天王星', sub: '横躺自转的青玉巨星', type: '冰巨星',
+                    dist: '19.2', distUnit: '天文单位', temp: '-195', orbit: '84.0 年', rot: '17.2 小时',
+                    desc: '宛如平躺沉睡于轨道之上的青玉冰巨星，自转倾角高达 97.8°。极度寒冷的大气中富含的甲烷分子吸收了红光光谱，散发出幽深而纯净的青色光晕。'
+                }
+            },
+            neptune: {
+                id: '09', size: 2.2, distVal: 136, speed: 0.003, rotSpeed: 0.022, glow: '#82b1ff',
+                en: {
+                    name: 'NEPTUNE', sub: 'Poseidon // Supersonic Ice Giant', type: 'ICE GIANT',
+                    dist: '30.0', distUnit: 'AU', temp: '-200', orbit: '164.8 y', rot: '16.1 h',
+                    desc: 'The outermost major wanderer, drenched in deep azure. Beneath its serene azure facade rage supersonic winds surpassing 2,100 km/h, the fastest recorded in our celestial neighborhood.'
+                },
+                zh: {
+                    name: '海王星', sub: '深蓝超音速风暴世界', type: '冰巨星',
+                    dist: '30.0', distUnit: '天文单位', temp: '-200', orbit: '164.8 年', rot: '16.1 小时',
+                    desc: '太阳系深邃边陲的幽蓝冰巨星。在其深沉宁静的海蓝外表下，咆哮着全系中最狂暴的高速飓风，狂风风速突破音速，时速可达两千公里以上。'
+                }
+            },
+            pluto: {
+                id: '10', size: 0.7, distVal: 154, speed: 0.0024, rotSpeed: 0.01, glow: '#d7ccc8',
+                en: {
+                    name: 'PLUTO', sub: 'Kuiper Frontier Pioneer', type: 'DWARF PLANET',
+                    dist: '39.5', distUnit: 'AU', temp: '-230', orbit: '248.0 y', rot: '6.39 d',
+                    desc: 'The famed pioneer of trans-Neptunian frontiers. Its heart-shaped nitrogen ice glacier, Sputnik Planitia, breathes atmospheric frost across rugged hydrocarbon cordilleras.'
+                },
+                zh: {
+                    name: '冥王星', sub: '柯伊伯带之心', type: '矮行星',
+                    dist: '39.5', distUnit: '天文单位', temp: '-230', orbit: '248.0 年', rot: '6.39 天',
+                    desc: '曾经的第九大行星，如今柯伊伯带的引路守望者。新视野号掠过时，在它苍凉冰封的地表上见证了那片巨大的氮冰心形平原“斯普特尼克”。'
+                }
+            },
+            haumea: {
+                id: '11', size: 0.7, distVal: 168, speed: 0.0021, rotSpeed: 0.045, glow: '#cfd8dc',
+                en: {
+                    name: 'HAUMEA', sub: 'Rapid-Spinning Trans-Neptunian Object', type: 'DWARF PLANET',
+                    dist: '43.2', distUnit: 'AU', temp: '-240', orbit: '284.1 y', rot: '3.91 h',
+                    desc: 'A celestial anomaly known for its rapid 3.9-hour rotation that centrifugally deforms its real-world shape into an elongated rugby-like ellipsoid, accompanied by its own crystalline ice ring.'
+                },
+                zh: {
+                    name: '妊神星', sub: '极速自转矮行星', type: '矮行星',
+                    dist: '43.2', distUnit: '天文单位', temp: '-240', orbit: '284.1 年', rot: '3.91 小时',
+                    desc: '天文学中以高速自转著称的奇异天体。不到 4 小时的自转离心力在真实宇宙中将其拉伸为三轴椭球体，并拥有独特的光环与冰晶碰撞碎屑家族。'
+                }
+            },
+            makemake: {
+                id: '12', size: 0.68, distVal: 182, speed: 0.0019, rotSpeed: 0.015, glow: '#ffab91',
+                en: {
+                    name: 'MAKEMAKE', sub: 'Frozen Tholin Red Surface', type: 'DWARF PLANET',
+                    dist: '45.8', distUnit: 'AU', temp: '-239', orbit: '309.9 y', rot: '22.5 h',
+                    desc: 'A brilliant trans-Neptunian ice world blanketed in pure methane and tholin organics, radiating a rich, reflective earthen-crimson hue.'
+                },
+                zh: {
+                    name: '鸟神星', sub: '赤褐凝冰之界', type: '矮行星',
+                    dist: '45.8', distUnit: '天文单位', temp: '-239', orbit: '309.9 年', rot: '22.5 小时',
+                    desc: '以造物神命名的红褐冰界。极度凝冻的甲烷与有机分子托林封锁了它的全境，在微弱日光映照下散发着典雅的粉红与赤金色泽。'
+                }
+            },
+            eris: {
+                id: '13', size: 0.72, distVal: 196, speed: 0.0015, rotSpeed: 0.014, glow: '#eceff1',
+                en: {
+                    name: 'ERIS', sub: 'Scattered Disc Giant', type: 'DWARF PLANET',
+                    dist: '67.7', distUnit: 'AU', temp: '-243', orbit: '558.0 y', rot: '25.9 h',
+                    desc: 'The most massive confirmed dwarf planet, silently traveling the deep Scattered Disc. Its discovery spurred the monumental 2006 astronomical reclassification of the solar family.'
+                },
+                zh: {
+                    name: '阋神星', sub: '散布盘最深疆界', type: '矮行星',
+                    dist: '67.7', distUnit: '天文单位', temp: '-243', orbit: '558.0 年', rot: '25.9 小时',
+                    desc: '散布盘边缘质量最大的孤独冰天体。正是它的发现促使国际天文学联合会重新定义了“行星”概念。它在深寒的极远黑暗中沉静漫行。'
+                }
+            }
+        };
+
+        const planetOrder = ['sun', 'mercury', 'venus', 'earth', 'moon', 'mars', 'ceres', 'jupiter', 'saturn', 'uranus', 'neptune', 'pluto', 'haumea', 'makemake', 'eris'];
+
+        // --- 2. 国际化渲染引擎 ---
+        function applyLanguage(lang) {
+            currentLang = lang;
+            document.body.className = `lang-${lang}` + (isFocusing ? ' in-focus' : '');
+            const dict = I18N[lang];
+
+            document.getElementById('i18n-lang-btn').innerText = dict.langBtn;
+            document.getElementById('i18n-inst-btn').innerText = dict.instBtn;
+            document.getElementById('i18n-meta').innerText = dict.meta;
+            document.getElementById('i18n-title').innerText = dict.title;
+            document.getElementById('i18n-sub').innerText = dict.sub;
+            document.getElementById('i18n-lead').innerText = dict.lead;
+            document.getElementById('i18n-opt-title').innerText = dict.optTitle;
+            document.getElementById('i18n-opt-sky').innerText = dict.optSky;
+            document.getElementById('i18n-opt-tracks').innerText = dict.optTracks;
+            document.getElementById('i18n-dyn-title').innerText = dict.dynTitle;
+            document.getElementById('i18n-dyn-rev').innerText = dict.dynRev;
+            document.getElementById('i18n-dyn-rot').innerText = dict.dynRot;
+            document.getElementById('i18n-dyn-scale').innerText = dict.dynScale;
+            document.getElementById('i18n-spec-dist').innerText = dict.specDist;
+            document.getElementById('i18n-spec-temp').innerText = dict.specTemp;
+            document.getElementById('i18n-spec-orbit').innerText = dict.specOrbit;
+            document.getElementById('i18n-spec-rot').innerText = dict.specRot;
+            document.getElementById('i18n-dismiss').innerText = dict.dismiss;
+            
+            // 真实署名与权威数据源国际化
+            document.getElementById('i18n-folio-design').innerText = dict.folioDesign;
+            document.getElementById('i18n-folio-sources').innerText = dict.folioSources;
+
+            updateFolioStatus();
+            if (activePlanetKey) renderFeatureArticle(activePlanetKey);
+        }
+
+        function toggleLanguage() {
+            applyLanguage(currentLang === 'en' ? 'zh' : 'en');
+        }
+
+        function closeSettings() {
+            const panel = document.getElementById('settings-panel');
+            if (panel && panel.classList.contains('active')) {
+                panel.classList.remove('active');
+            }
+        }
+
+        function updateFolioStatus() {
+            const dict = I18N[currentLang];
+            const folioEl = document.getElementById('i18n-folio-right');
+            if (!isFocusing || !activePlanetKey) {
+                folioEl.innerText = dict.folioRightOverview;
+            } else {
+                const idx = planetOrder.indexOf(activePlanetKey);
+                const numStr = (idx < 10 ? '0' : '') + idx;
+                folioEl.innerText = `${dict.folioRightPlate} [ ${numStr} / ${planetOrder.length} ]`;
+            }
+        }
+
+        // 键盘隐藏操作监听：[T] 切换语言；[← / →] 左右键盘切换星球 (仅在聚焦介绍时允许)；[ESC] 复位
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 't' || e.key === 'T') {
+                toggleLanguage();
+            } else if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+                if (isFocusing) navigatePlanet(1);
+            } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+                if (isFocusing) navigatePlanet(-1);
+            } else if (e.key === 'Escape' && isFocusing) {
+                resetGlobalView();
+            }
+        });
+
+        function navigatePlanet(direction) {
+            if (!isFocusing) return;
+            let curIndex = planetOrder.indexOf(activePlanetKey);
+            if (curIndex === -1) curIndex = 0;
+            let nextIndex = (curIndex + direction + planetOrder.length) % planetOrder.length;
+            focusOnBody(planetOrder[nextIndex]);
+        }
+
+        function renderFeatureArticle(key) {
+            const item = celestialData[key];
+            const textData = item[currentLang];
+            const dict = I18N[currentLang];
+
+            document.getElementById('feature-index').innerText = `${dict.catalogPrefix} ${item.id} // ${textData.type}`;
+            document.getElementById('feature-type').innerText = textData.type;
+            document.getElementById('feature-name').innerText = textData.name;
+            document.getElementById('feature-sub').innerText = textData.sub;
+            document.getElementById('spec-dist').innerHTML = `${textData.dist} <small>${textData.distUnit}</small>`;
+            document.getElementById('spec-temp').innerHTML = `${textData.temp} <small>&deg;C</small>`;
+            document.getElementById('spec-orbit').innerHTML = textData.orbit;
+            document.getElementById('spec-rot').innerHTML = textData.rot;
+            document.getElementById('feature-body').innerText = textData.desc;
+        }
+
+        // --- 3. 3D WebGL 场景与纹理引擎初始化 ---
+        const P = 'assets/textures/';
+        const textureSourceMap = {
+            sky:        [P + '2k_stars_milky_way.webp', P + '2k_stars.webp'],
+            sun:        [P + '2k_sun.webp'],
+            mercury:    [P + '2k_mercury.webp'],
+            venus:      [P + '2k_venus_atmosphere.webp', P + '2k_venus_surface.webp'],
+            earth:      [P + '2k_earth_daymap.webp'],
+            moon:       [P + '2k_moon.webp'],
+            mars:       [P + '2k_mars.webp'],
+            jupiter:    [P + '2k_jupiter.webp'],
+            saturn:     [P + '2k_saturn.webp'],
+            saturnRing: [P + '2k_saturn_ring_alpha.webp'],
+            uranus:     [P + '2k_uranus.webp'],
+            neptune:    [P + '2k_neptune.webp'],
+            ceres:      [P + '2k_ceres.webp', P + '2k_ceres_fictional.webp'],
+            pluto:      [P + '2k_pluto.webp'],
+            haumea:     [P + '2k_haumea_fictional.webp'],
+            makemake:   [P + '2k_makemake_fictional.webp'],
+            eris:       [P + '2k_eris_fictional.webp']
+        };
+
+        const container = document.getElementById('webgl-canvas');
+        const scene = new THREE.Scene();
+
+        const camera = new THREE.PerspectiveCamera(44, window.innerWidth / window.innerHeight, 0.1, 4000);
+        const defaultCamPos = new THREE.Vector3(0, 95, 205);
+        camera.position.copy(defaultCamPos);
+
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.25;
+        container.appendChild(renderer.domElement);
+
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.minDistance = 2.0;
+        controls.maxDistance = 850;
+        controls.maxPolarAngle = Math.PI - 0.05;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.95);
+        scene.add(ambientLight);
+
+        const sunLight = new THREE.PointLight(0xfff5e8, 3.8, 700, 0.45);
+        sunLight.position.set(0, 0, 0);
+        scene.add(sunLight);
+
+        const texLoader = new THREE.TextureLoader();
+
+        function loadResilientTexture(candidateUrls, fallbackCanvasGenerator) {
+            let index = 0;
+            const texture = new THREE.CanvasTexture(fallbackCanvasGenerator());
+            texture.wrapS = THREE.RepeatWrapping;
+
+            function tryNext() {
+                if (!candidateUrls || index >= candidateUrls.length) return;
+                const url = candidateUrls[index++];
+                texLoader.load(url, (loadedTex) => {
+                    loadedTex.wrapS = THREE.RepeatWrapping;
+                    texture.image = loadedTex.image;
+                    texture.needsUpdate = true;
+                }, undefined, () => tryNext());
+            }
+            tryNext();
+            return texture;
+        }
+
+        function createFallbackCanvas(type) {
+            const canvas = document.createElement('canvas');
+            canvas.width = 512; canvas.height = 256;
+            const ctx = canvas.getContext('2d');
+            const colorMap = {
+                sun: '#ffa100', mercury: '#8b8e94', venus: '#d89b53', earth: '#1c62a8',
+                moon: '#9ba0a6', mars: '#be5332', ceres: '#6d6862', jupiter: '#bf8c5d',
+                saturn: '#cfb993', uranus: '#7ecad2', neptune: '#2b5cb8', pluto: '#9e8979',
+                haumea: '#8f949c', makemake: '#aa553d', eris: '#b5bcc7'
+            };
+            ctx.fillStyle = colorMap[type] || '#4a5568';
+            ctx.fillRect(0, 0, 512, 256);
+
+            if (type === 'sun') {
+                const grad = ctx.createRadialGradient(256, 128, 10, 256, 128, 256);
+                grad.addColorStop(0, '#ffffff'); grad.addColorStop(0.4, '#ffb300'); grad.addColorStop(1, '#ff3d00');
+                ctx.fillStyle = grad; ctx.fillRect(0, 0, 512, 256);
+            } else if (type === 'sky') {
+                ctx.fillStyle = '#010206'; ctx.fillRect(0, 0, 512, 256);
+                for(let i=0; i<300; i++) {
+                    ctx.fillStyle = Math.random() > 0.3 ? '#fff' : '#8acaff';
+                    ctx.fillRect(Math.random()*512, Math.random()*256, 1.2, 1.2);
+                }
+            } else {
+                for (let i = 0; i < 40; i++) {
+                    ctx.fillStyle = `rgba(255, 255, 255, ${Math.random()*0.12})`;
+                    ctx.fillRect(0, Math.random()*256, 512, Math.random()*15+2);
+                }
+            }
+            return canvas;
+        }
+
+        let skyMesh = null;
+        function initSkySphere() {
+            const skyGeo = new THREE.SphereGeometry(650, 64, 40);
+            const skyTex = loadResilientTexture(textureSourceMap.sky, () => createFallbackCanvas('sky'));
+            const skyMat = new THREE.MeshBasicMaterial({
+                map: skyTex,
+                side: THREE.BackSide,
+                depthWrite: false
+            });
+            skyMesh = new THREE.Mesh(skyGeo, skyMat);
+            scene.add(skyMesh);
+        }
+        initSkySphere();
+
+        const planetsGroup = new THREE.Group();
+        const orbitLinesGroup = new THREE.Group();
+        scene.add(planetsGroup);
+        scene.add(orbitLinesGroup);
+
+        const celestialBodies = {};
+        const raycastTargets = [];
+
+        // 恒星太阳
+        const sunData = celestialData.sun;
+        const sunGeo = new THREE.SphereGeometry(sunData.size, 48, 48);
+        const sunTex = loadResilientTexture(textureSourceMap.sun, () => createFallbackCanvas('sun'));
+        const sunMat = new THREE.MeshBasicMaterial({ map: sunTex, transparent: true, opacity: 1.0 });
+        const sunMesh = new THREE.Mesh(sunGeo, sunMat);
+        planetsGroup.add(sunMesh);
+        sunMesh.userData = { key: 'sun' };
+        raycastTargets.push(sunMesh);
+
+        const sunGlow = new THREE.Mesh(
+            new THREE.SphereGeometry(sunData.size * 1.15, 32, 32),
+            new THREE.MeshBasicMaterial({ color: 0xffaa00, transparent: true, opacity: 0.28, side: THREE.BackSide })
+        );
+        sunMesh.add(sunGlow);
+
+        celestialBodies['sun'] = {
+            mesh: sunMesh, pivot: null, rotSpeed: sunData.rotSpeed, orbitSpeed: 0,
+            boundingRadius: sunData.size * 1.15, glowMesh: sunGlow
+        };
+
+        // 构造各大星体与卫星
+        Object.keys(celestialData).forEach(key => {
+            if (key === 'sun' || key === 'moon') return;
+            const data = celestialData[key];
+            const pivot = new THREE.Group();
+            planetsGroup.add(pivot);
+
+            // 保持正球体几何，确保贴图平整雅致
+            let geo = new THREE.SphereGeometry(data.size, 36, 36);
+
+            const tex = loadResilientTexture(textureSourceMap[key], () => createFallbackCanvas(key));
+            const mat = new THREE.MeshStandardMaterial({ map: tex, roughness: 0.65, metalness: 0.06, transparent: true, opacity: 1.0 });
+            const mesh = new THREE.Mesh(geo, mat);
+
+            let ringMesh = null;
+            let boundingR = data.size * 1.15;
+
+            // 土星 3D 环系统
+            if (data.isSaturn) {
+                boundingR = data.size * 2.55;
+                const ringGeo = new THREE.RingGeometry(data.size * 1.35, data.size * 2.5, 64);
+                const pos = ringGeo.attributes.position;
+                const uv = ringGeo.attributes.uv;
+                for (let i = 0; i < pos.count; i++) {
+                    const vertex = new THREE.Vector3().fromBufferAttribute(pos, i);
+                    uv.setXY(i, (vertex.length() - data.size * 1.35) / (data.size * 1.15), 0.5);
+                }
+                const ringTex = loadResilientTexture(textureSourceMap.saturnRing, () => {
+                    const c = document.createElement('canvas'); c.width=256; c.height=16;
+                    const ctx = c.getContext('2d');
+                    const g = ctx.createLinearGradient(0,0,256,0);
+                    g.addColorStop(0, 'rgba(210,190,150,0)'); g.addColorStop(0.5, 'rgba(210,190,150,0.8)'); g.addColorStop(1, 'rgba(210,190,150,0)');
+                    ctx.fillStyle = g; ctx.fillRect(0,0,256,16); return c;
+                });
+                ringMesh = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ map: ringTex, side: THREE.DoubleSide, transparent: true, opacity: 0.88 }));
+                ringMesh.rotation.x = Math.PI / 2.3;
+                mesh.add(ringMesh);
+            }
+
+            const glow = new THREE.Mesh(
+                new THREE.SphereGeometry(data.size * 1.1, 24, 24),
+                new THREE.MeshBasicMaterial({ color: data.glow, transparent: true, opacity: 0.16, side: THREE.BackSide })
+            );
+            mesh.add(glow);
+
+            // 地球与月球系统架构解耦
+            if (key === 'earth') {
+                const earthSystemGroup = new THREE.Group();
+                earthSystemGroup.position.set(data.distVal, 0, 0);
+                pivot.add(earthSystemGroup);
+
+                mesh.position.set(0, 0, 0);
+                mesh.userData = { key: key };
+                earthSystemGroup.add(mesh);
+                raycastTargets.push(mesh);
+
+                celestialBodies['earth'] = {
+                    mesh: mesh, pivot: pivot, rotSpeed: data.rotSpeed, orbitSpeed: data.speed,
+                    boundingRadius: boundingR, glowMesh: glow, ringMesh: null
+                };
+
+                const moonData = celestialData.moon;
+                const moonOrbitPivot = new THREE.Group();
+                earthSystemGroup.add(moonOrbitPivot);
+
+                const moonTex = loadResilientTexture(textureSourceMap.moon, () => createFallbackCanvas('moon'));
+                const moonMat = new THREE.MeshStandardMaterial({ map: moonTex, roughness: 0.8, transparent: true, opacity: 1.0 });
+                const moonMesh = new THREE.Mesh(new THREE.SphereGeometry(moonData.size, 24, 24), moonMat);
+                moonMesh.position.set(moonData.distVal, 0, 0);
+                moonMesh.userData = { key: 'moon' };
+                moonOrbitPivot.add(moonMesh);
+                raycastTargets.push(moonMesh);
+
+                celestialBodies['moon'] = {
+                    mesh: moonMesh, pivot: moonOrbitPivot, rotSpeed: moonData.rotSpeed, orbitSpeed: moonData.speed,
+                    boundingRadius: moonData.size * 1.3, glowMesh: null, ringMesh: null
+                };
+
+            } else {
+                mesh.position.set(data.distVal, 0, 0);
+                mesh.userData = { key: key };
+                pivot.add(mesh);
+                raycastTargets.push(mesh);
+
+                celestialBodies[key] = {
+                    mesh: mesh, pivot: pivot, rotSpeed: data.rotSpeed, orbitSpeed: data.speed,
+                    boundingRadius: boundingR, glowMesh: glow, ringMesh: ringMesh
+                };
+            }
+
+            const curve = new THREE.EllipseCurve(0, 0, data.distVal, data.distVal, 0, 2*Math.PI, false, 0);
+            const points = curve.getPoints(120);
+            const orbitGeo = new THREE.BufferGeometry().setFromPoints(points);
+            const orbitLine = new THREE.LineLoop(orbitGeo, new THREE.LineBasicMaterial({
+                color: (key === 'ceres' || key === 'pluto' || key === 'haumea' || key === 'makemake' || key === 'eris') ? 0x8a7a6e : 0x3d5475,
+                transparent: true,
+                opacity: 0.28
+            }));
+            orbitLine.rotation.x = Math.PI / 2;
+            orbitLinesGroup.add(orbitLine);
+        });
+
+        // --- 4. 几何视锥算法：精准停靠屏幕左侧，严防溢出边缘 ---
+        let targetBody = null;
+        let isFocusing = false;
+        let isOrbitActive = true;
+        let isSpinActive = true;
+        let timeScale = 1.0;
+        let activePlanetKey = null;
+
+        const editorialFeature = document.getElementById('editorial-feature');
+
+        window.focusOnBody = function(key) {
+            closeSettings();
+
+            const body = celestialBodies[key];
+            if (!body) return;
+
+            targetBody = body;
+            isFocusing = true;
+            activePlanetKey = key;
+
+            document.body.classList.add('in-focus');
+            renderFeatureArticle(key);
+            updateFolioStatus();
+            editorialFeature.classList.add('active');
+        };
+
+        window.resetGlobalView = function() {
+            closeSettings();
+            targetBody = null;
+            isFocusing = false;
+            activePlanetKey = null;
+
+            document.body.classList.remove('in-focus');
+            updateFolioStatus();
+            editorialFeature.classList.remove('active');
+        };
+
+        window.toggleSettings = function(e) {
+            if (e) e.stopPropagation();
+            document.getElementById('settings-panel').classList.toggle('active');
+        };
+
+        let pointerDownX = 0, pointerDownY = 0;
+        const raycaster = new THREE.Raycaster();
+        const pointer = new THREE.Vector2();
+
+        window.addEventListener('pointerdown', (e) => {
+            pointerDownX = e.clientX;
+            pointerDownY = e.clientY;
+
+            const panel = document.getElementById('settings-panel');
+            const btn = document.getElementById('i18n-inst-btn');
+            if (panel && panel.classList.contains('active')) {
+                if (!panel.contains(e.target) && !btn.contains(e.target)) {
+                    closeSettings();
+                }
+            }
+        });
+
+        window.addEventListener('pointerup', (e) => {
+            if (e.target.closest('.interactive') || e.target.closest('.editorial-feature')) return;
+            if (Math.hypot(e.clientX - pointerDownX, e.clientY - pointerDownY) > 5) return;
+
+            closeSettings();
+
+            pointer.x = (e.clientX / window.innerWidth) * 2 - 1;
+            pointer.y = -(e.clientY / window.innerHeight) * 2 + 1;
+            raycaster.setFromCamera(pointer, camera);
+
+            const intersects = raycaster.intersectObjects(raycastTargets, false);
+            if (intersects.length > 0) {
+                const hit = intersects[0].object;
+                if (hit.userData && hit.userData.key) {
+                    focusOnBody(hit.userData.key);
+                }
+            } else {
+                resetGlobalView();
+            }
+        });
+
+        // --- 5. 核心动力学更新循环 ---
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // A. 自转与公转状态驱动
+            for (const key in celestialBodies) {
+                const item = celestialBodies[key];
+                
+                if (isSpinActive && item.mesh) {
+                    if (isFocusing) {
+                        if (targetBody === item) {
+                            item.mesh.rotation.y += item.rotSpeed * timeScale;
+                        }
+                    } else {
+                        item.mesh.rotation.y += item.rotSpeed * timeScale;
+                    }
+                }
+
+                if (isOrbitActive && !isFocusing && item.pivot) {
+                    item.pivot.rotation.y += item.orbitSpeed * 0.4 * timeScale;
+                }
+            }
+
+            // B. 弱化消隐：非主体星体与星轨完全消隐至 0
+            for (const key in celestialBodies) {
+                const item = celestialBodies[key];
+                const isCurrent = (isFocusing && targetBody === item);
+                const desiredAlpha = isFocusing ? (isCurrent ? 1.0 : 0.0) : 1.0;
+
+                if (item.mesh && item.mesh.material) {
+                    item.mesh.material.opacity = THREE.MathUtils.lerp(item.mesh.material.opacity, desiredAlpha, 0.08);
+                    item.mesh.visible = item.mesh.material.opacity > 0.005;
+                }
+                if (item.glowMesh && item.glowMesh.material) {
+                    const glowAlpha = isCurrent ? 0.22 : (isFocusing ? 0.0 : 0.16);
+                    item.glowMesh.material.opacity = THREE.MathUtils.lerp(item.glowMesh.material.opacity, glowAlpha, 0.08);
+                    item.glowMesh.visible = item.glowMesh.material.opacity > 0.005;
+                }
+                if (item.ringMesh && item.ringMesh.material) {
+                    const ringAlpha = isCurrent ? 0.88 : (isFocusing ? 0.0 : 0.88);
+                    item.ringMesh.material.opacity = THREE.MathUtils.lerp(item.ringMesh.material.opacity, ringAlpha, 0.08);
+                    item.ringMesh.visible = item.ringMesh.material.opacity > 0.005;
+                }
+            }
+
+            const orbitLineTarget = isFocusing ? 0.0 : 0.28;
+            orbitLinesGroup.children.forEach(line => {
+                if (line.material) {
+                    line.material.opacity = THREE.MathUtils.lerp(line.material.opacity, orbitLineTarget, 0.08);
+                    line.visible = line.material.opacity > 0.005;
+                }
+            });
+
+            // C. 镜头左侧精准视界锚定
+            if (isFocusing && targetBody) {
+                const targetWorldPos = new THREE.Vector3();
+                targetBody.mesh.getWorldPosition(targetWorldPos);
+
+                const aspect = camera.aspect;
+                const vFovRad = THREE.MathUtils.degToRad(camera.fov);
+                const tanHalfVfov = Math.tan(vFovRad / 2);
+                const tanHalfHfov = tanHalfVfov * aspect;
+
+                const R = targetBody.boundingRadius;
+
+                const D_horizontal = R / (0.42 * tanHalfHfov);
+                const D_vertical = R / (0.65 * tanHalfVfov);
+                const fitDistance = Math.max(D_horizontal, D_vertical, 2.5);
+
+                const rightVec = new THREE.Vector3(1, 0, 0).applyQuaternion(camera.quaternion);
+                const lateralOffset = fitDistance * tanHalfHfov * 0.44;
+                const offsetFocalPoint = targetWorldPos.clone().add(rightVec.clone().multiplyScalar(lateralOffset));
+
+                controls.target.lerp(offsetFocalPoint, 0.08);
+
+                const camDir = new THREE.Vector3();
+                camera.getWorldDirection(camDir);
+                const desiredCamPos = offsetFocalPoint.clone().sub(camDir.multiplyScalar(fitDistance));
+                camera.position.lerp(desiredCamPos, 0.06);
+
+            } else if (!isFocusing) {
+                controls.target.lerp(new THREE.Vector3(0, 0, 0), 0.05);
+                camera.position.lerp(defaultCamPos, 0.04);
+            }
+
+            if (skyMesh && skyMesh.visible) {
+                skyMesh.rotation.y += 0.0001 * timeScale;
+            }
+
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // --- 6. 事件绑定与启动 ---
+        document.getElementById('toggle-sky').addEventListener('change', (e) => { if (skyMesh) skyMesh.visible = e.target.checked; });
+        document.getElementById('toggle-tracks').addEventListener('change', (e) => { orbitLinesGroup.visible = e.target.checked; });
+        document.getElementById('toggle-orbit').addEventListener('change', (e) => { isOrbitActive = e.target.checked; });
+        document.getElementById('toggle-spin').addEventListener('change', (e) => { isSpinActive = e.target.checked; });
+        document.getElementById('time-scale').addEventListener('input', (e) => {
+            timeScale = parseFloat(e.target.value);
+            document.getElementById('speed-label').innerText = timeScale.toFixed(1) + 'x';
+        });
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        applyLanguage('en');
+        animate();
+    </script>
+</body>
+</html>
