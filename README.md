@@ -1,79 +1,79 @@
-# The Celestial Odyssey · 星穹奥德赛
+# The Celestial Odyssey
 
-一颗可以握在手里的太阳系，排版成一本天文杂志。打开网页即可拖拽、点击、缩放，在星穹与专栏之间自由穿行。
+A solar system you can hold in your hand, typeset like an astronomy magazine. Drag, click and zoom your way between the star field and the editorial columns — no install, no build step.
 
-![全景总览](.github/preview-overview.png)
+![Overview](.github/preview-overview.png)
 
-在线体验：<https://sulongwooo.github.io/the_celestial_odyssey/>
+Live: <https://sulongwooo.github.io/the_celestial_odyssey/>
 
 ---
 
-## 这是什么
+## What it is
 
-一个用 WebGL 渲染的太阳系互动画册：太阳、八大行星、月球与五颗矮行星（谷神星、冥王星、妊神星、鸟神星、阋神星）都按真实纹理与轨道次序排布。整体视觉参照印刷杂志——巨幅报头、专栏文章、页脚刊号，而不是常见的仪表盘式科普页。
+A WebGL-rendered, interactive atlas of the solar system: the Sun, the eight planets, the Moon and five dwarf planets (Ceres, Pluto, Haumea, Makemake and Eris), each placed in true orbital order with real texture maps. The visual language borrows from print magazines — an oversized masthead, editorial columns and an issue folio — instead of the usual dashboard-style infographic.
 
-## 你可以做什么
+## What you can do
 
-- **全景俯瞰**：所有天体沿轨道缓慢公转，滚轮拉近细看，拖拽改变视角
-- **点击天体**：镜头自动停靠到画面左侧，右侧滑出该天体的特写专栏（半长轴、表面温度、公转/自转周期 + 中英双语解说）
-- **观测调校仪**：开关注释星空、轨道线与公转/自转，滑块控制时间流速（最高 3.0x）
-- **双语切换**：整套版式、页脚署名、天体文案均为中英两套
+- **Overview** — all bodies orbit slowly along their paths; scroll to zoom in, drag to change the viewing angle.
+- **Click a body** — the camera docks to the left side of the frame and a feature column slides in on the right, with semi-major axis, surface temperature, orbital and rotational periods plus bilingual (English / 中文) commentary.
+- **Observation console** — toggle the star field, orbit lines, revolution and rotation, and set the time scale with a slider (up to 3.0×).
+- **Bilingual** — every section, the folio and all body entries ship in both English and Chinese; press `T` to switch.
 
-### 特写专栏
+### The feature column
 
-点击天体后，镜头按视锥计算停靠到左侧，右侧滑出该天体的杂志式专栏；其余天体与轨道线同步淡出，把版面留给数据与文字。
+On click, the camera position is computed from the viewing frustum so the selected body sits clear of the panel; the remaining bodies and orbit lines fade out, leaving the layout to the data and the text.
 
-![特写专栏：谷神星](.github/preview-focus.png)
+![Feature column: Ceres](.github/preview-focus.png)
 
-| 操作 | 功能 |
+| Input | Action |
 | --- | --- |
-| 拖拽 | 旋转视角 |
-| 滚轮 | 拉近 / 拉远 |
-| 点击天体 | 进入特写专栏 |
-| 点击空白 | 返回全景 |
-| `←` / `→` | 上一个 / 下一个天体（仅特写状态） |
-| `ESC` | 返回全景 |
-| `T` | 中英文切换 |
+| Drag | Orbit the camera |
+| Scroll | Zoom in / out |
+| Click a body | Open its feature column |
+| Click empty space | Return to the overview |
+| `←` / `→` | Previous / next body (focus mode only) |
+| `ESC` | Return to the overview |
+| `T` | Toggle English / Chinese |
 
-## 本地运行
+## Run locally
 
-方式一：直接双击 `index.html`。
+Option 1: open `index.html` directly in a browser.
 
-方式二：起一个静态服务（推荐，纹理加载更稳定）：
+Option 2: serve it over a static server (recommended — textures load more reliably):
 
 ```bash
 python3 -m http.server 8123
 ```
 
-浏览器打开 <http://localhost:8123>。
+Then open <http://localhost:8123>.
 
-## 项目结构
+## Project structure
 
 ```
 the_celestial_odyssey/
-├── index.html              # 页面主体，样式与逻辑全部内联
+├── index.html              # The whole page: styles and logic are inlined
 ├── assets/
-│   ├── lib/                # three.js r128 + OrbitControls（本地化，无需 CDN）
-│   └── textures/           # 20 张 2K 天体纹理与星空背景
-├── .github/                # 预览图：典藏全景 + 特写专栏
+│   ├── lib/                # Three.js r128 + OrbitControls, vendored (no CDN)
+│   └── textures/           # 20 texture maps: 2K bodies and the star field
+├── .github/                # README previews: overview and feature column
 ├── LICENSE
-└── 无用/                   # 历史草稿，已加入 .gitignore，不会进入仓库
+└── 无用/                   # Archived drafts, git-ignored and not in the repo
 ```
 
-## 部署到 GitHub Pages
+## Deploy to GitHub Pages
 
-1. 在仓库 **Settings → Pages** 中，Source 选择 **Deploy from a branch**
-2. Branch 选 `main`，目录选 `/ (root)`，保存
-3. 几分钟后访问 `https://<用户名>.github.io/the_celestial_odyssey/`
+1. In **Settings → Pages**, set Source to **Deploy from a branch**.
+2. Pick branch `main` and folder `/ (root)`, then save.
+3. After a minute or two, visit `https://<username>.github.io/the_celestial_odyssey/`.
 
-页面为纯静态文件，无构建步骤、无后端依赖。
+The page is plain static files — no build step, no backend.
 
-## 技术与素材
+## Tech & credits
 
-- **渲染**：Three.js r128 + WebGL，纯原生 JavaScript，无框架、无构建工具
-- **字体**：Cinzel / Cormorant Garamond / Space Grotesk / Noto Serif SC（Google Fonts 在线加载；离线时自动回退系统衬线/无衬线字体）
-- **依赖**：three.js 与 OrbitControls 已放入 `assets/lib`，断网也能运行
-- **贴图与数据**：NASA / JPL 公开数据，纹理来自 [Solar System Scope](https://www.solarsystemscope.com/textures/)（CC BY 4.0）
+- **Rendering** — Three.js r128 + WebGL, plain JavaScript, no framework and no build tool.
+- **Type** — Cinzel, Cormorant Garamond, Space Grotesk and Noto Serif SC via Google Fonts; falls back to system serif/sans-serif fonts when offline.
+- **Dependencies** — Three.js and OrbitControls are vendored under `assets/lib`, so the scene runs without a network connection.
+- **Textures & data** — NASA / JPL public data; textures from [Solar System Scope](https://www.solarsystemscope.com/textures/) (CC BY 4.0).
 
 ## License
 
