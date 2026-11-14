@@ -2,7 +2,7 @@
 
 一颗可以握在手里的太阳系，排版成一本天文杂志。打开网页即可拖拽、点击、缩放，在星穹与专栏之间自由穿行。
 
-![全景总览](.github/preview.png)
+![全景总览](.github/preview-overview.png)
 
 在线体验：<https://sulongwooo.github.io/the_celestial_odyssey/>
 
@@ -55,7 +55,7 @@ the_celestial_odyssey/
 ├── assets/
 │   ├── lib/                # three.js r128 + OrbitControls（本地化，无需 CDN）
 │   └── textures/           # 20 张 2K 天体纹理与星空背景
-├── .github/                # 预览图：全景总览 + 特写专栏
+├── .github/                # 预览图：典藏全景 + 特写专栏
 ├── LICENSE
 └── 无用/                   # 历史草稿，已加入 .gitignore，不会进入仓库
 ```
